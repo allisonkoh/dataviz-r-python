@@ -1,0 +1,61 @@
+---
+title: "Best Practices for Using `googlesheets4`"
+author: "Allison Koh"
+output:
+  html_notebook:
+    fig_caption: yes
+    theme: cerulean
+    toc: no
+---
+
+```{r setup, include=FALSE}
+# defaults 
+knitr::opts_chunk$set(echo = TRUE,include=TRUE,
+                      fig.width = 6, fig.height = 4,
+                      out.width = "100%")
+options(java.parameters = "-Xmx1024m")
+
+# rm(list=ls())
+
+# packages 
+if(!require("pacman")) install.packages("pacman")
+
+pacman::p_load(
+  tidyverse,
+  foreign,
+  haven
+  # random forests  
+  # randomForest,
+  # rpart,
+  # rpart.plot,
+  # # modeling 
+  # lme4, 
+  # blme, 
+  # arm
+  # ggfortify,
+  # ggpubr,
+  # ggeffects,
+  # lubridate,
+  # reshape2,
+  # xtable,
+  # janitor,
+  # scales,
+  # vcd,
+  # survey,
+  # kableExtra,
+  )
+
+# my preferred ggplot defaults 
+ggplot2::theme_set(theme_bw())
+```
+
+# Introduction 
+
+# Loading and preparing data 
+
+```{r}
+url <- "https://docs.google.com/spreadsheets/d/1G4LGoG-a89Cj_tUKUZvUjJefAjUhyDLM9xQvfylab9g/edit#gid=0"
+# df <- googlesheets4::read_sheet(url)
+readr::write_csv(df,"data/rcp-national.csv") # saving df to avoid wasting too much data on redownloading the csv 
+```
+
