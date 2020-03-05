@@ -1,5 +1,5 @@
 ---
-title: "Best Practices for Using `googlesheets4`"
+title: "Using `googlesheets4` to Explore Democratic Primary Polling Data"
 author: "Allison Koh"
 output:
   html_notebook:
@@ -23,39 +23,249 @@ if(!require("pacman")) install.packages("pacman")
 pacman::p_load(
   tidyverse,
   foreign,
-  haven
-  # random forests  
-  # randomForest,
-  # rpart,
-  # rpart.plot,
-  # # modeling 
-  # lme4, 
-  # blme, 
-  # arm
-  # ggfortify,
-  # ggpubr,
-  # ggeffects,
-  # lubridate,
-  # reshape2,
-  # xtable,
-  # janitor,
-  # scales,
-  # vcd,
-  # survey,
-  # kableExtra,
+  haven,
+  lubridate,
+  # shiny 
+  shiny,
+  shinythemes,
+  # for using python 
+  reticulate
   )
 
 # my preferred ggplot defaults 
 ggplot2::theme_set(theme_bw())
 ```
 
+IDEAL EXAMPLE- loading Google sheets into R from different sources using `R` or `Python`; deployment in RShiny or as `learnr` tutorial (or both?)
+
+```{r reticulate setup}
+library(reticulate)
+reticulate::conda_list()
+reticulate::use_condaenv("r-reticulate")
+
+# install packages 
+py_install("pandas",pip=TRUE)
+```
+
+```{python}
+# import libraries 
+import numpy as np
+import pandas as pd
+
+# load data 
+data_url = 'https://projects.fivethirtyeight.com/polls-page/president_primary_polls.csv'
+
+df = pd.read_csv(data_url,sep=",")
+```
 # Introduction 
+
+```{r}
+py$df
+```
 
 # Loading and preparing data 
 
 ```{r}
 url <- "https://docs.google.com/spreadsheets/d/1G4LGoG-a89Cj_tUKUZvUjJefAjUhyDLM9xQvfylab9g/edit#gid=0"
-# df <- googlesheets4::read_sheet(url)
-readr::write_csv(df,"data/rcp-national.csv") # saving df to avoid wasting too much data on redownloading the csv 
+df <- googlesheets4::read_sheet(url)
+# readr::write_csv(df,"data/rcp-national.csv") # saving df to avoid wasting too much data on redownloading the csv 
+```
+
+```{r}
+# obtain information on class for each variable 
+sapply(df,class)
+
+# change candidate polling numbers to as.numeric
+df[6:13] <- sapply(df[6:13],as.numeric)
+
+# separate polling date columns 
+df <- df %>% separate(Date,c("start_date","end_date"), sep = " - ")
+
+```
+
+```{python, fig.width = 15}
+import matplotlib.pyplot as plt 
+import numpy as np 
+
+t = np.arange(0.0,2.0,0.01)
+s = 1 + np.sin(2*np.pi*t)
+
+plt.plot(t,s)
+plt.grid(True)
+plt.show()
+```
+
+```{python}
+import pandas as pd
+df = pd.read_csv("data/rcp-national.csv")
+```
+
+# Shiny Sample Code 
+
+```{r ui example}
+library(shiny)
+library(shinythemes)
+
+shinyUI(
+  fluidPage(
+    theme = shinytheme("cerulean"),
+    titlePanel("Craigslist Lost & Found"),
+    sidebarLayout(
+      sidebarPanel(
+        h6(paste("This app is hard-wired to read a single, public Google",
+                 "Sheet that uses the IMPORTXML function.")),
+        h6("Visit the Sheet in the browser:",
+           a("HERE", href = "https://docs.google.com/spreadsheets/d/1qtvN-PKWvIbmTJ-RSmga1m2iGn7Mze4w_yRg9ZJx2TU/",
+             target="_blank")),
+        h6(a("Click Here to See Code on Github",
+             href="https://github.com/jennybc/googlesheets/tree/master/inst/shiny-examples/03_craigslist-lost-and-found",
+             target="_blank")),
+        h6(paste("Post types are identified by keywords (lost', 'missing', 'stolen', or 'found') in the description of a post.",
+                 "Posts are identified as 'unknown' if those keywords cannot be detected.")),
+        uiOutput("selectedDate"),
+        br(),
+        plotOutput("plotDailyData"),
+        br(),
+        br(),
+        uiOutput("dateRange"),
+        br(),
+        checkboxInput("postTypes", "Compare post types")
+      ),
+      mainPanel(
+        DT::dataTableOutput("dataForDay"),
+        h3("Total Number of Posts"),
+        plotOutput("plotDataCount")
+      )
+    )
+  ))
+```
+
+```{r server example}
+library(shiny)
+library(googlesheets)
+library(dplyr)
+library(ggplot2)
+library(stringr)
+
+shinyServer(function(input, output, session) {
+
+  craig_ss <-
+    gs_key("1qtvN-PKWvIbmTJ-RSmga1m2iGn7Mze4w_yRg9ZJx2TU", lookup = FALSE)
+
+  ## All the data
+  craig_all <- gs_read(craig_ss) %>%
+    select(-URL) %>%
+    mutate(DATE = as.Date(DATE, format = "%m/%d/%Y"),
+           DESCRIPTION = tolower(DESCRIPTION))
+
+  ## Count number of Lost/found/stolen in each day
+  craig_daily_types <- craig_all %>%
+    mutate(Type =
+             ifelse(str_detect(DESCRIPTION, "lost|missing"), "Lost",
+                    ifelse(str_detect(DESCRIPTION, "found"), "Found",
+                           ifelse(str_detect(DESCRIPTION, "stolen"),
+                                  "Stolen", "Unknown")))) %>%
+    mutate(Type = Type %>% factor(c("Lost", "Found", "Stolen", "Unknown"))) %>%
+    group_by(DATE) %>%
+    count(DATE, Type)
+
+  ## max/min dates for date selectors
+  min_date <- min(craig_all$DATE)
+  max_date <- max(craig_all$DATE)
+
+  output$selectedDate <- renderUI({
+    dateInput("selectedDate", "Pick a date", min = min_date,
+              max = max_date, format = "yyyy-mm-dd")
+  })
+
+  output$dateRange <- renderUI({
+    dateRangeInput("dateRange", "Pick a date range", start = min_date,
+                   end = max_date, min = min_date, max = max_date,
+                   format = "yyyy-mm-dd", startview = "month",
+                   separator = " to ")
+  })
+
+  dataInput1 <- reactive({
+    validate(
+      need(length(input$selectedDate) > 0, message = "Loading")
+    )
+
+    craig_data <- craig_all %>%
+      dplyr::filter(DATE == input$selectedDate)
+
+    craig_data
+
+  })
+
+  output$dataForDay <- DT::renderDataTable({
+
+    DT::datatable(dataInput1())
+
+  })
+
+  # Get data between dates and count number of posts
+  dataInput2 <- reactive({
+
+    validate(
+      need(length(input$dateRange) > 0, message = "Loading")
+    )
+
+    craig_subset <- craig_all %>%
+      filter(DATE %>% between(input$dateRange[1], input$dateRange[2])) %>%
+      mutate(COUNT = 1) %>%
+      group_by(DATE) %>%
+      summarise(count = sum(COUNT))
+
+    craig_daily <-
+      craig_daily_types[between(craig_daily_types$DATE,
+                                input$dateRange[1],
+                                input$dateRange[2]),]
+
+    list(craig_subset, craig_daily)
+  })
+
+  basePlot <- reactive({
+    validate(
+      need(dataInput2(), message = "Loading Data")
+      )
+
+    dat <- dataInput2()[[1]]
+
+    ggplot(dat, aes(x = DATE, y = count)) +
+      geom_bar(stat="identity", alpha = 0.5) +
+      scale_y_continuous(expand = c(0, 0)) +
+      labs(x = "", y = "Number of Posts")
+  })
+
+  output$plotDataCount <- renderPlot({
+
+    if(input$postTypes == FALSE) {
+      basePlot()
+    } else {
+
+      dat_daily_type <- dataInput2()[[2]]
+
+      p <- basePlot() +
+        geom_line(data = dat_daily_type, aes(x = DATE, y = n, group = Type)) +
+        facet_grid(~Type)
+
+      p
+    }
+
+  })
+
+  output$plotDailyData <- renderPlot({
+    validate(
+      need(length(input$selectedDate) > 0, message = "Loading")
+    )
+    dat <- craig_daily_types %>% filter(DATE == input$selectedDate)
+
+    ggplot(dat, aes(x = Type, y = n)) +
+      geom_bar(stat="identity") +
+      scale_y_continuous(expand = c(0, 0)) +
+      labs(x = "", y = "Number of Posts")
+  })
+
+})
 ```
 
