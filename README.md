@@ -1,4 +1,4 @@
-# Data Visualization in `R` and `Python` 
+# Data Wrangling for Visualization in `R` and `Python` 
 
 Regardless of your programming language of preference, data visualization is paramount to understanding complex patterns in data. However, there are many steps that need to be taken *before* we can visualize the data. Therefore, this tutorial offers an illustration of the entire data visualization process in `R` and `Python`. To illustrate the process from importing to visualizing data, we will use data from the [FiveThirtyEight Presidential Endorsement Tracker](https://fivethirtyeight.com/features/were-tracking-2020-presidential-endorsements-heres-why-they-probably-still-matter/). 
 
