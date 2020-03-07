@@ -21,6 +21,7 @@ if(!require("pacman")) install.packages("pacman")
 pacman::p_load(
   learnr,
   tidyverse,
+  magrittr,
   reticulate,
   fivethirtyeight,
   shiny,
@@ -123,27 +124,9 @@ The dataset contains the following variables:
 
 Most data formats we commonly use are not native to `R` or `Python` and need to be imported. One of the ways we can import this data is to read in a `.csv` file from a URL. Here, we use the `foreign` package in `R` and `pandas` library in `Python` to read a `.csv` file and import data frames. 
 
-
-```{r toying around with data to replace current example, include = FALSE}
-# great british bakeoff 
-remotes::install_github("apreshill/bakeoff")
-dat1 <- bakeoff::bakers
-dat1
-
-# rpdr 
-rpdr.df <- readxl::read_xlsx("/Users/allisonwun-huikoh/Documents/GitHub/dataviz-r-python/data/RuPaul-Predict-A-Looza — Data Tables.xlsx",sheet = 3)
-View(rpdr.df)
-
-rpdr.df1 <- readxl::read_xlsx("data/RuPaul-Predict-A-Looza — Data Tables.xlsx", sheet = 5)
-View(rpdr.df1)
-
-# bachelor 
-names(fivethirtyeight::bachelorette)
-```
-
 ```{r rb, exercise = TRUE}
 library(foreign)
-url <- "https://projects.fivethirtyeight.com/endorsements-2020-data/endorsements-2020.csv"
+url <- "https://raw.githubusercontent.com/fivethirtyeight/data/master/murder_2016/murder_2016_prelim.csv"
 dat <- read.csv(url)
 ```
 
@@ -151,7 +134,7 @@ The equivalent code in `Python` is:
 
 ```{python, eval = FALSE}
 import pandas as pd 
-url = "https://projects.fivethirtyeight.com/endorsements-2020-data/endorsements-2020.csv"
+url = "https://raw.githubusercontent.com/fivethirtyeight/data/master/murder_2016/murder_2016_prelim.csv"
 dat = pd.read_csv(url)
 ```
 
@@ -161,7 +144,7 @@ Alternatively, we can use the `fivethirtyeight` package in `R` to import data. I
 
 ```{r rc, exercise = TRUE}
 library(fivethirtyeight)
-dat1 <- fivethirtyeight::endorsements_2020
+dat1 <- fivethirtyeight::murder_2016_prelim
 ```
 
 ## Summarizing data 
@@ -183,7 +166,7 @@ Before we prepare data for visualization, it is generally a good idea to underst
 Run each code chunk and answer the questions below. 
 
 ```{r, eval = TRUE, include = FALSE}
-url <- "https://projects.fivethirtyeight.com/endorsements-2020-data/endorsements-2020.csv"
+url <- "https://raw.githubusercontent.com/fivethirtyeight/data/master/murder_2016/murder_2016_prelim.csv"
 dat <- read.csv(url)
 ```
 
@@ -193,12 +176,12 @@ summary(dat)
 
 ```{r r1a, echo = FALSE}
 quiz(caption = "",
-  question("How many DNC members have endorsed a candidate?",
-           answer("231"),
-           answer("413", correct = TRUE),
-           answer("104"),
-           answer("105"),
-           answer("44"),
+  question("What is the mean number of murders per state in 2016?",
+           answer("56.47"),
+           answer("62.38", correct = TRUE),
+           answer("30.00"),
+           answer("71.50"),
+           answer("2.000"),
            allow_retry = TRUE
   )
 )
@@ -210,12 +193,12 @@ head(dat)
 
 ```{r r2a, echo = FALSE}
 quiz(caption = "",
-  question("Who was the first recorded endorsee?",
-           answer("Joe Biden", correct = TRUE),
-           answer("Julian Castro"),
-           answer("Bernie Sanders"),
-           answer("John Delaney"),
-           answer("Elizabeth Warren"),
+  question("In Tennessee, what was the change in number of murders between 2015 and 2016?",
+           answer("114"),
+           answer("54"),
+           answer("72"),
+           answer("44", correct = TRUE),
+           answer("39"),
            allow_retry = TRUE
   )
 )
@@ -228,8 +211,8 @@ dim(dat)
 ```{r r3a, echo = FALSE}
 quiz(caption = "",
   question("How many variables are in the dataset?",
-           answer("1022"),
-           answer("13", correct = TRUE),
+           answer("79"),
+           answer("7", correct = TRUE),
            allow_retry = TRUE
   )
 )
@@ -239,21 +222,21 @@ quiz(caption = "",
 
 To fully understand the data we are working with, it is also important to look at frequency tables for individual variables.  
 
-Let's suppose we want to know more about which *category* of politician has given out the most endorsements. In `R`, we can retrieve this data using the following code: 
+Let's suppose we want to know more about when the data for each city was last updated (`as_of`). In `R`, we can retrieve this data using the following code: 
 
 ```{r table-example, exercise = TRUE}
-table(dat$category)
+table(dat$as_of)
 ```
 
 In `Python`, we can use the pandas `value_counts()` function on our column of interest to retrieve frequency counts. 
 
 ```{python, eval = FALSE}
-dat['category'].value_counts()
+dat['as_of'].value_counts()
 ```
 
 ### Exercise 2 - Creating a cross-tabulation 
 
-Let's suppose we want to know about who has the most endorsements to date (`endorsee`). Retrieve the frequency counts from the corresponding variable in data frame `dat`.
+Let's suppose we want to know about how many cities are attributed to each `state`. Retrieve the frequency counts from the corresponding variable in data frame `dat`.
 
 ```{r r4, exercise = TRUE}
 ```
@@ -261,16 +244,16 @@ Let's suppose we want to know about who has the most endorsements to date (`endo
 ### Exercise 3 - Interpreting the results of a cross-tabulation
 
 ```{r r4-solution, echo = FALSE}
-table(dat$endorsee)
+table(dat$state)
 ```
 
 ```{r r5, echo = FALSE}
 quiz(caption = "",
-  question("Who has the most endorsements to date?",
-           answer("Bernie Sanders"),
-           answer("Elizabeth Warren"),
-           answer("Michael Bloomberg"),
-           answer("Joe Biden", correct = TRUE),
+  question("How many cities from Texas are included in this dataset?",
+           answer("1"),
+           answer("14"),
+           answer("10", correct = TRUE),
+           answer("4"),
            allow_retry = TRUE
   )
 )
@@ -291,35 +274,18 @@ In practice, data visualization is only the last part in a long stream of data g
 * `summarize()`: Summarizing data set.
 * `arrange()`: Reorders rows.
 
-We can use `select()` and `filter()` to subset the 2020 Presidential Endorsement data in `R`, and `mutate()` to change variable types:
+We can use `select()` and `filter()` to subset the 2016 murder data in `R`:
 
 ```{r}
 dat_subset <- dat %>% 
   # Selecting columns 
-  dplyr::select(date, 
-                endorser:source,  
-                category,
-                points
+  dplyr::select(city, 
+                state:change # selecting multiple columns 
                 ) %>% 
   # Excluding columns (but keeping all others)
-  dplyr::select(-source) %>% 
+  dplyr::select(-change) %>% 
   # Filtering out NAs (a.k.a. missing values)
-  dplyr::filter(!is.na(endorsee)) %>% 
-  # Changing the class of variables  
-  dplyr::mutate(points = as.numeric(points),
-                endorsee = as.factor(endorsee)) # factor variables are ideal for categories 
-```
-
-To prepare data for visualizing the number of endorsements per candidate, `group_by()`, `summarize()` and `arrange()` are particularly useful. 
-
-```{r}
-by_endorsee <- dat_subset %>% 
-  # Using group_by() to create grouped data frame of endorsees 
-  dplyr::group_by(endorsee) %>% 
-  # Using summarize to generate # endorsements per candidate variable 
-  dplyr::summarize(n_endorsements=n()) %>% 
-  # Using arrange to order # endorsements from highest to lowest 
-  dplyr::arrange(n_endorsements)
+  dplyr::filter(!is.na(X2016_murders)) 
 ```
 
 #### What is the `Python` equivalent of these functions? 
@@ -333,20 +299,20 @@ Using the 2020 Democratic Endorsement Primary data, some parallel examples are s
 `R`
 
 ```{r, eval = FALSE}
-filter(dat_final, year >= 2019)
-filter(dat, state=="NY")
-filter(dat, state %in% c("NY","CA","TX"))
+filter(dat, year == 2015)
+filter(dat, state=="New York")
+filter(dat, state %in% c("New York","California","Texas"))
 ```
 
 `Python`
 
 ```{python, eval = FALSE}
-dat_final[(dat_final['year'] >= 2019)]
-df[dat['state'] == 'NY']
-df[(dat.state == 'NY') | (dat.state == 'CA') | (dat.state == 'TX')]
+dat[(dat['year'] == 2015)]
+dat[dat['state'] == 'New York']
+dat[(dat.state == 'New York') | (dat.state == 'California') | (dat.state == 'Texas')]
 
 # Alternative solution to the third 
-filter_list = ['NY', 'CA', 'TX']
+filter_list = ['New York', 'California', 'Texas']
 df[dat.state.isin(filter_list)] 
 ```
 
@@ -355,15 +321,15 @@ df[dat.state.isin(filter_list)]
 `R`
 
 ```{r, eval = FALSE}
-select(dat, endorser, endorsee)
-select(dat, -source)
+select(dat, city, X2016_murders)
+select(dat, -change)
 ```
 
 `Python`
 
 ```{python, eval = FALSE}
-dat[['endorser', 'endorsee']]
-dat.drop('source')
+dat[['city', 'X2016_murders']]
+dat.drop('change')
 ```
 
 #### **Arrange**
@@ -371,15 +337,15 @@ dat.drop('source')
 `R`
 
 ```{r, eval = FALSE}
-arrange(dat, points)
-arrange(dat, desc(points))
+arrange(dat, X2016_murders)
+arrange(dat, desc(X2016_murders))
 ```
 
 `Python`
 
 ```{python, eval = FALSE}
-dat.sort_values('points')
-dat.sort_values('points', ascending=False)
+dat.sort_values('X2016_murders')
+dat.sort_values('X2016_murders', ascending=False)
 ```
 
 #### **Grouping**
@@ -387,20 +353,20 @@ dat.sort_values('points', ascending=False)
 `R`
 
 ```{r, eval = FALSE}
-dat %>% group_by(endorsee) 
-dat %>% group_by(endorsee, year)
+dat %>% group_by(city) 
+dat %>% group_by(city, state)
 dat %>% ungroup()
 ```
 
 `Python`
 
 ```{python, eval = FALSE}
-dat.groupby('endorsee')
-dat.groupby(['endorsee', 'year'])
+dat.groupby('city')
+dat.groupby(['city', 'state'])
 dat.reset_index() 
 
 # Alternatively, 
-dat.groupby('group1', as_index=False)
+dat.groupby('city', as_index=False)
 ```
 
 #### Creating new data frames with grouping and summarizing 
@@ -408,13 +374,13 @@ dat.groupby('group1', as_index=False)
 `R` 
 
 ```{r, eval = FALSE}
-dat %>% group_by(endorsee) %>% summarise(mean_points = mean(points),
+dat %>% group_by(city) %>% summarise(mean_points = mean(points),
                                         sum_points = sum(points))
 
 dat %>% 
-  group_by(endorsee, year) %>% 
-  summarise(n_endorsements = n(), 
-            mean_points = mean(points),
+  group_by(city, state) %>% 
+  summarise(n_murder = n(), 
+            av_murder = mean(points),
             sum_points = sum(points))    
 ```
 
@@ -437,22 +403,22 @@ Data typically does not come in the format that we need for visualization. In ge
 
 For **wide** data formats, each unit's responses are in a single row. For example:
 
-| Candidate | # Endorsements 2019 | # Endorsements 2020 |
+| Candidate | # Murders 2015 | # Murders 2016 |
 |-----------|----------------|---------|
-| Joe Biden         |        51     | 66      |
-| Bernie Sanders         |        24      | 8      |
-| Elizabeth Warren         |        23      | 17      |
+| Chicago         |        378     | 536      |
+| Orlando         |        19      | 73     |
+| Memphis         |        114      | 158      |
 
 For **long** data formats, each row denotes the observation of a unit at a given point in time. For example:
 
 | Candidate  | Year | # Endorsements  |
 |---------|----------|-----|
-| Joe Biden      | 2019  | 51  |
-| Joe Biden     | 2020  | 66  |
-| Bernie Sanders      | 2019  | 24  |
-| Bernie Sanders    | 2020  | 8  |
-| Elizabeth Warren      | 2019  | 23  |
-| Elizabeth Warren      | 2020  | 17  |
+| Chicago      | 2015  | 378  |
+| Chicago     | 2016  | 536  |
+| Orlando      | 2015  | 19  |
+| Orlando    | 2016  | 73  |
+| Memphis      | 2015  | 114  |
+| Memphis      | 2016  | 158 |
 
 ***It is important to note that we want our data to be in long format for visualization.*** 
 
@@ -461,7 +427,7 @@ For **long** data formats, each row denotes the observation of a unit at a given
 ```{r, include = FALSE}
 dat_final <- dat_subset %>% 
   # Separate `date` into `year`, `month` and `day` columns 
-  tidyr::separate(date,c("year","month","day"),sep="-",) %>%
+  tidyr::separate(date,c("year","month","day"),sep="-") %>%
   # Remove `month` and `day` columns from data frame 
   dplyr::select(-c("month","day")) %>% 
   # Create data frame grouped by endorsee-year 
@@ -470,6 +436,18 @@ dat_final <- dat_subset %>%
   dplyr::summarize(n_endorsement=n()) %>% 
   # Filter out first row with NAs 
   dplyr::filter(endorsee!="")
+```
+
+To prepare data for visualizing the number of endorsements per candidate, `group_by()`, `summarize()` and `arrange()` are particularly useful. 
+
+```{r}
+by_state <- dat_subset %>% 
+  # Using group_by() to create grouped data frame of endorsees 
+  dplyr::group_by(state) %>% 
+  # Using summarize to generate # endorsements per candidate variable 
+  dplyr::summarize(n_murder=n()) %>% 
+  # Using arrange to order # endorsements from highest to lowest 
+  dplyr::arrange(n_murder)
 ```
 
 ```{r, echo = FALSE}
