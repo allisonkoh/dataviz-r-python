@@ -24,26 +24,36 @@ pacman::p_load(
   reticulate,
   fivethirtyeight,
   shiny,
-  shinythemes
+  shinythemes,
+  remotes
   )
 
 checker <- function(label, user_code, check_code, envir_result, evaluate_result, ...) {
   list(message = check_code, correct = TRUE, location = "append")
 }
 tutorial_options(exercise.timelimit = 60, exercise.checker = checker)
+
+# set wd 
+setwd("/Users/allisonwun-huikoh/Documents/GitHub/dataviz-r-python/")
 ```
 
 ## Introduction
 
+### 
+
 Regardless of your programming language of preference, data visualization is paramount to understanding complex patterns in data. However, there are many steps that need to be taken *before* we can visualize the data. Therefore, this tutorial offers an illustration of the entire data visualization process in `R` and `Python`. To illustrate the process from importing to visualizing data, we will use data from the [FiveThirtyEight Presidential Endorsement Tracker](https://fivethirtyeight.com/features/were-tracking-2020-presidential-endorsements-heres-why-they-probably-still-matter/). 
 
-Given this focus on outlining the process of visualizing data, this tutorial does not offer a comprehensive explanation of the principles underlying data visualization. Some prior knowledge of data wrangling/visualization in either language before starting this tutorial is recommended before going through the examples in this tutorial. For an overview of `tidyverse` tools in `R` that will be useful to brush up on before starting this tutorial, you can go through some of the [tidyverse primers](https://rstudio.cloud/learn/primers) from RStudio. 
-
-Therefore, this tutorial provides a *very brief* overview of: 
+This tutorial provides a *very brief* overview of: 
 
 * Importing and summarizing data 
 * Preparing data for visualization 
 * The next step: basic visualization with barplots and faceting   
+
+### Prerequisites 
+
+Given this focus on outlining the process of visualizing data, this tutorial does not offer a comprehensive explanation of the principles underlying data visualization. Some prior knowledge of data wrangling/visualization in either language before starting this tutorial is recommended before going through the examples in this tutorial. For an overview of `tidyverse` tools in `R` that will be useful to brush up on before starting this tutorial, you can go through some of the [tidyverse primers](https://rstudio.cloud/learn/primers) from RStudio. 
+
+### Packages and Libraries 
 
 This tutorial uses several packages from the `tidyverse` library in `R`, as well as the `reticulate` package which provides a comprehensive set of tools for interoperability between `Python` and `R.` The `Python` libraries utilized in this tutorial are `pandas` for importing, summarizing, and manipulating data and `plotnine` for data visualization.
 
@@ -64,13 +74,19 @@ import numpy as np
 from plotnine import ggplot, geom_bar, aes, stat_smooth, facet_wrap
 ```
 
+### Acknowledgments and Notes
+
 Parts of this tutorial are adapted from material used in workshops run by the [Hertie Data Science Lab](https://github.com/hertie-data-science-lab) in Berlin, where I work on as a Teaching Assistant to [Therese Anders](https://therese.rbind.io/) and other instructors from the Hertie School of Governance. 
 
 **Note: In this version of the tutorial, all code in Python is not run due to errors in knitting the .Rmd file. For this reason, all exercises in this version are in `R`. Please feel free to [submit an issue](https://github.com/allisonkoh/r-spreadsheets-tutorials/issues) if you find any errors in the code for this tutorial.**
 
 ## About the data 
 
+### 
+
 In this tutorial, we will use data from the [FiveThirtyEight Presidential Endorsement Tracker](https://fivethirtyeight.com/methodology/how-our-presidential-endorsement-tracker-works/), which records endorsements of American presidential primary candidates from current/former government officials and high-ranked political party members (i.e. members of the Democratic National Convention). For this dataset, an endorsement is defined as a "public display or pronouncement of support that articulates or strongly implies that a candidate is an endorser's current No. 1 choice for president". This means that there is only one endorsement linked to each endorser, and that they can change over the course of the primary season. In the case of ambiguities, Five Thirty Eight reaches out to offices of the candidates and endorsers for a clarification. 
+
+### 
 
 In this model, endorsements are "ranked" by their perceived relative value based on their current/former position. For the 2020 Democratic Presidential Primaries, it comprises of the following: 
 
@@ -86,6 +102,8 @@ In this model, endorsements are "ranked" by their perceived relative value based
 10. Officials holding statewide or territory-wide elected office, excluding positions (e.g. commissioners) that are held by multiple people at once (2 points).
 11. State and territorial legislatures’ majority and minority leaders (2 points).
 12. Other DNC members (1 point).
+
+### 
 
 The dataset contains the following variables: 
 
@@ -104,6 +122,24 @@ The dataset contains the following variables:
 ### Reading `.csv` files from a URL 
 
 Most data formats we commonly use are not native to `R` or `Python` and need to be imported. One of the ways we can import this data is to read in a `.csv` file from a URL. Here, we use the `foreign` package in `R` and `pandas` library in `Python` to read a `.csv` file and import data frames. 
+
+
+```{r toying around with data to replace current example, include = FALSE}
+# great british bakeoff 
+remotes::install_github("apreshill/bakeoff")
+dat1 <- bakeoff::bakers
+dat1
+
+# rpdr 
+rpdr.df <- readxl::read_xlsx("/Users/allisonwun-huikoh/Documents/GitHub/dataviz-r-python/data/RuPaul-Predict-A-Looza — Data Tables.xlsx",sheet = 3)
+View(rpdr.df)
+
+rpdr.df1 <- readxl::read_xlsx("data/RuPaul-Predict-A-Looza — Data Tables.xlsx", sheet = 5)
+View(rpdr.df1)
+
+# bachelor 
+names(fivethirtyeight::bachelorette)
+```
 
 ```{r rb, exercise = TRUE}
 library(foreign)
