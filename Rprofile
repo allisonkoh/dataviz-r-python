@@ -1,0 +1,1 @@
+Sys.setenv(RETICULATE_PYTHON = "/Users/allisonwun-huikoh/Documents/GitHub/r-spreadsheets-tutorials/mypython/bin/python")

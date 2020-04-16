@@ -1,0 +1,13 @@
+name: dataviz-r-python
+title: dataviz-r-python
+username:
+account: allison-koh
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 1911796
+bundleId: 2858030
+url: https://allison-koh.shinyapps.io/dataviz-r-python/
+when: 1583518489.83007
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: dataviz-r-python.html|learnr-reticulate.html|learnr-reticulate.Rmd|LICENSE|Rprofile|spreadsheets-best-practices.nb.html|spreadsheets-best-practices.Rmd|data/rcp-national.csv|test/app.R
